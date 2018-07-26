@@ -4,7 +4,7 @@
 
 >*该项目仅供学习交流,如侵犯到您的权益请及时与我们联系
 
->vps上的vim进行编写,大神勿喷
+>vps上的vim进行编写,大神勿喷,语言是es6
 
 >该网站有防盗链机制,国外vps无法获取代理列表,因此最好在国内vps上运行
 
@@ -13,7 +13,7 @@
 
     git clone https://github.com/chenxianming/audio-downloader.git
     
-    npm install
+    cd audio-downloader && npm install
     
 ## 使用
 
