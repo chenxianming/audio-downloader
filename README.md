@@ -5,16 +5,17 @@
 >vps上的vim进行编写,大神勿喷
 >该网站有防盗链机制,国外vps无法获取代理列表,因此最好在国内vps上运行
 
-##安装
+## 安装
 
     git clone https://github.com/chenxianming/audio-downloader.git
+    
     npm install
     
-##使用
+## 使用
 
     node audio69.js -d http://m.audio69.com/book/28.html -a audio69
     
-##参数说明
+## 参数说明
 
     -d Url (必填,下载链接,仅针对手机版,必须用手机版url)
     -a Agent (选填,最好是填,用于测试代理服务器是否可用,该网站有防盗链机制)
