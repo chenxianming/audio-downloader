@@ -8,7 +8,7 @@ const request = require('request'),
       progress = require('request-progress');
 
 
-program.option('-d, --download [value]', 'Download path').option('-s, --startindex [value]', 'Download start index').option('-c --concurrency [value]','Comcurrency limit').option('-a --agent [value]','Visit agent').parse(process.argv);
+program.option('-d, --download [value]', 'Download path').option('-s, --startindex [value]', 'Download start index').option('-c --concurrency [value]','Comcurrency limit').option('-a --agent [value]','Visit agent').option('-p --proxy [value]','Get proxy list form').parse(process.argv);
 
 if(!program.download || (program.download && typeof(program.download) != 'string') ){
 	return program.help();
@@ -40,7 +40,7 @@ const checkPort = (port) => new Promise( (resolve) => {
                 resolve(true);
         });
 
-} )
+} );
 
 
 const checkUrl = (ip,url) => new Promise( (resolve) => {
@@ -68,28 +68,123 @@ const checkUrl = (ip,url) => new Promise( (resolve) => {
 
 } );
 
-const fetchProxy = () => new Promise( (resolve) => {
-        let pages = '1'.split(''),
+const trim = (text) => {
+	let whitespace = '[\\x20\\t\\r\\n\\f]';
+	return text == null ? '' : (text + '').replace( new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),'' );
+}
+
+const fetchProxy = (site) => new Promise( (resolve) => {
+	let sitePro = site || 'xici';
+
+	let urlstr = '1';
+
+	switch(sitePro){
+		case '89ip':
+			{
+				urlstr = '12345';
+			}
+		break ;
+
+		case 'ip3366':
+			{
+				urlstr = '123456';
+			}
+		break ;
+	}
+
+        let pages = urlstr.split(''),
+	    fetchList = [],
             pro = [];
 
-	Async.eachLimit(pages,1,(item,callback) => {
+	switch(sitePro){
+		case 'xici':
+			{
+				pages.forEach( (p) => {
+					fetchList.push(`http://www.xicidaili.com/nn/${ p }`);
+				} );
+			}
+		break ;
 
+		case '89ip':
+			{
+				pages.forEach( (p) => {
+					fetchList.push(`http://www.89ip.cn/index_${p}.html`);
+				} );
+			}
+		break ;
+
+		case '66ip':
+			{
+				fetchList.push('http://www.66ip.cn/mo.php?sxb=&tqsl=200&port=&export=&ktip=&sxa=&submit=%CC%E1++%C8%A1&textarea=http%3A%2F%2Fwww.66ip.cn%2F%3Fsxb%3D%26tqsl%3D200%26ports%255B%255D2%3D%26ktip%3D%26sxa%3D%26radio%3Dradio%26submit%3D%25CC%25E1%2B%2B%25C8%25A1');
+			}
+		break ;
+
+		case 'ip3366':
+			{
+				pages.forEach( (p) => {
+					fetchList.push(`http://www.ip3366.net/?page=${p}`);
+				} );
+			}
+		break ;
+	}
+
+	Async.eachLimit(fetchList,1,(item,callback) => {
                 request({
-                        url:`http://www.xicidaili.com/nn/${item}`,
+			url:item,
                         method:'get',
-                        timeout:6000
+                        timeout:6000,
+			headers:{
+				'user-agent':ua
+			}
                 },(err,data) => {
+
                         if(err){
                                 return callback();
                         }
 
                         let $ = cheerio.load(data.body);
 
-                        $('#ip_list tr').each(function(idx){
-                                if(idx!=0){
-                                        pro.push(`http://${$(this).find('td').eq(1).text()}:${$(this).find('td').eq(2).text()}`);
-                                }
-                        });
+			switch(sitePro){
+				case 'xici' :
+					{
+                                                $('#ip_list tr').each(function(idx){
+                                                        if(idx!=0){
+								pro.push(`http://${$(this).find('td').eq(1).text()}:${$(this).find('td').eq(2).text()}`);
+                                                        }
+                                                });
+
+					}
+				break ;
+			
+				case '89ip' :
+					{
+			
+						$('.layui-table tbody tr').each(function(){
+							pro.push(`http://${ trim( $(this).find('td').eq(0).text() )}:${ trim( $(this).find('td').eq(1).text() ) }`);
+						});
+					}
+				break ;
+
+				case '66ip' :
+					{
+						let vArr = $('body').html().split('<br>');
+
+						vArr.forEach( (v) => {
+							if(v.length<25){
+								pro.push(`http://${ trim(v) }`);
+							}
+						} );
+					}
+				break ;
+
+				case 'ip3366' :
+					{
+						$('#list tr').each(function(){
+							pro.push(`http://${ trim( $(this).find('td').eq(0).text() )}:${ trim( $(this).find('td').eq(1).text() ) }`);
+						});
+					}
+				break ;
+			}
 
                         callback();
 
@@ -315,7 +410,7 @@ const download = (lists,startIdx,thread) => new Promise( (resolve) => {
 } );
 
 const f = async () => {
-	await fetchProxy();
+	await fetchProxy(program.proxy);
 
 	let lists = ( await getList(list) );	
 	let st = isNaN(program.startindex) ? 0 : program.startindex,
